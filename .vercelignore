@@ -10,8 +10,9 @@ coverage/
 .env.*.local
 
 # Local development database and media.
+# Keep these rooted: a bare `storage/` also strips `server/src/storage/`.
 .dev/
-storage/
+/storage/
 server/storage/
 server/.test-storage/
 
