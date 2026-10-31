@@ -46,6 +46,8 @@ describe('public content visibility', () => {
     const response = await request(app).get('/api/public/projects/published-project');
     expect(response.status).toBe(200);
     expect(response.body.data.title).toBe('Published Project');
+    // The client's ProjectDetail contract exposes the relation as `technologies`.
+    expect(Array.isArray(response.body.data.technologies)).toBe(true);
   });
 
   it('returns 404 for a draft project slug', async () => {

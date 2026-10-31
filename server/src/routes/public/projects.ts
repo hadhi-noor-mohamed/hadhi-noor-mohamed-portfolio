@@ -145,10 +145,19 @@ publicProjectsRouter.get(
 
     const relatedMedia = await loadMediaByIds(relatedProjects.map((p) => p.coverMediaId));
 
-    const { coverMediaId: _c, reportMediaId: _r, deletedAt: _d, ...rest } = project;
+    const {
+      coverMediaId: _c,
+      reportMediaId: _r,
+      deletedAt: _d,
+      skills,
+      ...rest
+    } = project;
 
     return ok(res, {
       ...rest,
+      // The public ProjectDetail contract calls this field `technologies`;
+      // the Prisma relation is `skills`.
+      technologies: skills,
       cover,
       report,
       gallery: await Promise.all(
