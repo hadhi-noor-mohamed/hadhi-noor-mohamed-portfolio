@@ -1,0 +1,669 @@
+// ---------------------------------------------------------------------------
+// Hadhi Noor Mohamed H — Portfolio & Personal CMS
+// Prisma schema (PostgreSQL)
+// ---------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+  // "native" covers local development, Docker and long-running Node servers.
+  // "rhel-openssl-3.0.x" covers Vercel/AWS Lambda (Amazon Linux 2023), which
+  // otherwise fails at runtime with "Query engine library not found".
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================================================
+// Enums
+// ===========================================================================
+
+enum AdminRole {
+  OWNER
+  EDITOR
+}
+
+enum PublishState {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  SCHEDULED
+}
+
+enum ProjectStatus {
+  CONCEPT
+  IN_PROGRESS
+  PROTOTYPE
+  COMPLETED
+  ARCHIVED
+}
+
+enum TimelineType {
+  EDUCATION
+  INTERNSHIP
+  WORK
+  TRAINING
+  WORKSHOP
+  VOLUNTEER
+  CERTIFICATION
+}
+
+enum ContactCategory {
+  JOB_OPPORTUNITY
+  PROJECT_COLLABORATION
+  TECHNICAL_DISCUSSION
+  FEEDBACK
+  OTHER
+}
+
+enum ContactStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+enum MediaKind {
+  IMAGE
+  PDF
+  VIDEO
+  DOCUMENT
+  OTHER
+}
+
+enum StorageDriver {
+  LOCAL
+  S3
+}
+
+enum AnalyticsEventType {
+  PAGE_VIEW
+  PROJECT_VIEW
+  BLOG_VIEW
+  RESUME_DOWNLOAD
+  CONTACT_SUBMIT
+  EXTERNAL_LINK_CLICK
+  PROJECT_LINK_CLICK
+}
+
+// ===========================================================================
+// Authentication
+// ===========================================================================
+
+model AdminUser {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  role          AdminRole @default(OWNER)
+  totpSecret    String?
+  totpEnabled   Boolean   @default(false)
+  lastLoginAt   DateTime?
+  failedLogins  Int       @default(0)
+  lockedUntil   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions  Session[]
+  auditLogs AuditLog[]
+  uploads   MediaAsset[] @relation("MediaUploader")
+
+  @@map("admin_users")
+}
+
+model Session {
+  id         String   @id // sha256 hash of the raw session token
+  userId     String
+  csrfToken  String
+  ipHash     String?
+  userAgent  String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  user AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  summary   String?
+  meta      Json?
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  user AdminUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ===========================================================================
+// Profile & identity
+// ===========================================================================
+
+model Profile {
+  id                  String   @id @default(cuid())
+  fullName            String
+  headline            String
+  intro               String
+  aboutHtml           String
+  location            String   @default("")
+  email               String   @default("")
+  phone               String   @default("")
+  wordmark            String   @default("")
+  availabilityLabel   String   @default("")
+  availabilityEnabled Boolean  @default(false)
+  seekingEmployment   Boolean  @default(false)
+  openToFreelance     Boolean  @default(false)
+  openToRelocation    Boolean  @default(false)
+  openToInternship    Boolean  @default(false)
+  profileImageId      String?
+  heroImageId         String?
+  techBadges          String[] @default([])
+  seoTitle            String   @default("")
+  seoDescription      String   @default("")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  profileImage MediaAsset? @relation("ProfileImage", fields: [profileImageId], references: [id], onDelete: SetNull)
+  heroImage    MediaAsset? @relation("ProfileHeroImage", fields: [heroImageId], references: [id], onDelete: SetNull)
+
+  @@map("profile")
+}
+
+model SocialLink {
+  id        String   @id @default(cuid())
+  label     String
+  url       String
+  icon      String   @default("link")
+  sortOrder Int      @default(0)
+  visible   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@map("social_links")
+}
+
+model NavigationItem {
+  id           String   @id @default(cuid())
+  label        String
+  href         String
+  icon         String   @default("")
+  sortOrder    Int      @default(0)
+  visible      Boolean  @default(true)
+  isExternal   Boolean  @default(false)
+  openInNewTab Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@map("navigation_items")
+}
+
+// ===========================================================================
+// Skills
+// ===========================================================================
+
+model SkillCategory {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String   @default("")
+  icon        String   @default("")
+  sortOrder   Int      @default(0)
+  visible     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  skills Skill[]
+
+  @@index([sortOrder])
+  @@map("skill_categories")
+}
+
+model Skill {
+  id                 String   @id @default(cuid())
+  name               String
+  slug               String   @unique
+  description        String   @default("")
+  categoryId         String?
+  icon               String   @default("")
+  logoMediaId        String?
+  proficiencyLabel   String   @default("")
+  proficiencyPercent Int?
+  featured           Boolean  @default(false)
+  sortOrder          Int      @default(0)
+  published          Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  category SkillCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  logo     MediaAsset?    @relation("SkillLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+  projects Project[]      @relation("ProjectSkills")
+
+  @@index([categoryId])
+  @@index([sortOrder])
+  @@map("skills")
+}
+
+// ===========================================================================
+// Projects
+// ===========================================================================
+
+model Project {
+  id               String        @id @default(cuid())
+  title            String
+  slug             String        @unique
+  shortDescription String        @default("")
+  overview         String        @default("")
+  problemStatement String        @default("")
+  approach         String        @default("")
+  solution         String        @default("")
+  outcome          String        @default("")
+  keyFeatures      String[]      @default([])
+  challenges       String[]      @default([])
+  learnings        String[]      @default([])
+  category         String        @default("")
+  role             String        @default("")
+  teamInfo         String        @default("")
+  startDate        DateTime?
+  endDate          DateTime?
+  status           ProjectStatus @default(CONCEPT)
+  coverMediaId     String?
+  githubUrl        String        @default("")
+  liveDemoUrl      String        @default("")
+  demoVideoUrl     String        @default("")
+  reportMediaId    String?
+  featured         Boolean       @default(false)
+  state            PublishState  @default(DRAFT)
+  sortOrder        Int           @default(0)
+  seoTitle         String        @default("")
+  seoDescription   String        @default("")
+  deletedAt        DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  cover   MediaAsset? @relation("ProjectCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  report  MediaAsset? @relation("ProjectReport", fields: [reportMediaId], references: [id], onDelete: SetNull)
+  images  ProjectImage[]
+  docs    ProjectDocument[]
+  skills  Skill[]     @relation("ProjectSkills")
+  posts   BlogPost[]
+  journey JourneyEntry[]
+
+  @@index([state, deletedAt])
+  @@index([sortOrder])
+  @@index([featured])
+  @@map("projects")
+}
+
+model ProjectImage {
+  id        String   @id @default(cuid())
+  projectId String
+  mediaId   String
+  caption   String   @default("")
+  alt       String   @default("")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  project Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  media   MediaAsset @relation("ProjectImageMedia", fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_images")
+}
+
+model ProjectDocument {
+  id        String   @id @default(cuid())
+  projectId String
+  mediaId   String
+  label     String   @default("")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  project Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  media   MediaAsset @relation("ProjectDocumentMedia", fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_documents")
+}
+
+// ===========================================================================
+// Timeline: education / experience
+// ===========================================================================
+
+model TimelineEntry {
+  id            String       @id @default(cuid())
+  type          TimelineType
+  organization  String
+  role          String       @default("")
+  field         String       @default("")
+  specialization String      @default("")
+  location      String       @default("")
+  startDate     DateTime?
+  endDate       DateTime?
+  current       Boolean      @default(false)
+  grade         String       @default("")
+  hours         String       @default("")
+  description   String[]     @default([])
+  technologies  String[]     @default([])
+  logoMediaId   String?
+  documentMediaId String?
+  url           String       @default("")
+  sortOrder     Int          @default(0)
+  visible       Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  logo     MediaAsset? @relation("TimelineLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+  document MediaAsset? @relation("TimelineDocument", fields: [documentMediaId], references: [id], onDelete: SetNull)
+
+  @@index([type, sortOrder])
+  @@map("timeline_entries")
+}
+
+// ===========================================================================
+// Certifications & achievements
+// ===========================================================================
+
+model Certification {
+  id           String   @id @default(cuid())
+  title        String
+  issuer       String   @default("")
+  issueDate    DateTime?
+  description  String   @default("")
+  credentialUrl String  @default("")
+  imageMediaId String?
+  pdfMediaId   String?
+  skillTags    String[] @default([])
+  featured     Boolean  @default(false)
+  sortOrder    Int      @default(0)
+  visible      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  image MediaAsset? @relation("CertificationImage", fields: [imageMediaId], references: [id], onDelete: SetNull)
+  pdf   MediaAsset? @relation("CertificationPdf", fields: [pdfMediaId], references: [id], onDelete: SetNull)
+
+  @@index([sortOrder])
+  @@map("certifications")
+}
+
+model Achievement {
+  id           String   @id @default(cuid())
+  title        String
+  organization String   @default("")
+  date         DateTime?
+  description  String   @default("")
+  imageMediaId String?
+  pdfMediaId   String?
+  verificationUrl String @default("")
+  projectId    String?
+  featured     Boolean  @default(false)
+  sortOrder    Int      @default(0)
+  visible      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  image MediaAsset? @relation("AchievementImage", fields: [imageMediaId], references: [id], onDelete: SetNull)
+  pdf   MediaAsset? @relation("AchievementPdf", fields: [pdfMediaId], references: [id], onDelete: SetNull)
+
+  @@index([sortOrder])
+  @@map("achievements")
+}
+
+// ===========================================================================
+// Media library
+// ===========================================================================
+
+model MediaAsset {
+  id            String        @id @default(cuid())
+  storageKey    String        @unique
+  storageDriver StorageDriver @default(LOCAL)
+  kind          MediaKind     @default(IMAGE)
+  originalName  String
+  displayLabel  String        @default("")
+  mimeType      String
+  size          Int
+  width         Int?
+  height        Int?
+  alt           String        @default("")
+  tags          String[]      @default([])
+  isPublic      Boolean       @default(true)
+  checksum      String        @default("")
+  uploadedById  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  uploadedBy AdminUser? @relation("MediaUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  projectCovers      Project[]      @relation("ProjectCover")
+  projectReports     Project[]      @relation("ProjectReport")
+  projectImages      ProjectImage[] @relation("ProjectImageMedia")
+  projectDocuments   ProjectDocument[] @relation("ProjectDocumentMedia")
+  skillLogos         Skill[]        @relation("SkillLogo")
+  timelineLogos      TimelineEntry[] @relation("TimelineLogo")
+  timelineDocuments  TimelineEntry[] @relation("TimelineDocument")
+  certificationImages Certification[] @relation("CertificationImage")
+  certificationPdfs  Certification[] @relation("CertificationPdf")
+  achievementImages  Achievement[]  @relation("AchievementImage")
+  achievementPdfs    Achievement[]  @relation("AchievementPdf")
+  journeyCovers      JourneyEntry[] @relation("JourneyCover")
+  journeyVideos      JourneyEntry[] @relation("JourneyVideo")
+  blogCovers         BlogPost[]     @relation("BlogCover")
+  resumeVersions     ResumeVersion[]
+  profileImages      Profile[]      @relation("ProfileImage")
+  profileHeroImages  Profile[]      @relation("ProfileHeroImage")
+
+  @@index([kind])
+  @@index([createdAt])
+  @@map("media_assets")
+}
+
+// ===========================================================================
+// Learning journey
+// ===========================================================================
+
+model JourneyEntry {
+  id           String       @id @default(cuid())
+  title        String
+  slug         String       @unique
+  date         DateTime
+  description  String       @default("")
+  contentHtml  String       @default("")
+  coverMediaId String?
+  videoUrl     String       @default("")
+  videoMediaId String?
+  images       String[]     @default([])
+  tags         String[]     @default([])
+  projectId    String?
+  externalUrl  String       @default("")
+  state        PublishState @default(DRAFT)
+  featured     Boolean      @default(false)
+  sortOrder    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  cover   MediaAsset? @relation("JourneyCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  video   MediaAsset? @relation("JourneyVideo", fields: [videoMediaId], references: [id], onDelete: SetNull)
+  project Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([state, date])
+  @@map("journey_entries")
+}
+
+// ===========================================================================
+// Blog
+// ===========================================================================
+
+model BlogPost {
+  id             String       @id @default(cuid())
+  title          String
+  slug           String       @unique
+  excerpt        String       @default("")
+  contentMd      String       @default("")
+  contentHtml    String       @default("")
+  coverMediaId   String?
+  category       String       @default("")
+  readingMinutes Int          @default(1)
+  state          PublishState @default(DRAFT)
+  publishedAt    DateTime?
+  scheduledFor   DateTime?
+  seoTitle       String       @default("")
+  seoDescription String       @default("")
+  viewCount      Int          @default(0)
+  featured       Boolean      @default(false)
+  projectId      String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  cover     MediaAsset? @relation("BlogCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  project   Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  tags      BlogTag[]   @relation("BlogPostTags")
+
+  @@index([state, publishedAt])
+  @@map("blog_posts")
+}
+
+model BlogTag {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  createdAt DateTime   @default(now())
+  posts     BlogPost[] @relation("BlogPostTags")
+
+  @@map("blog_tags")
+}
+
+// ===========================================================================
+// Contact inbox
+// ===========================================================================
+
+model ContactMessage {
+  id        String          @id @default(cuid())
+  name      String
+  email     String
+  subject   String          @default("")
+  category  ContactCategory @default(OTHER)
+  message   String
+  status    ContactStatus   @default(NEW)
+  consent   Boolean         @default(false)
+  ipHash    String?
+  userAgent String?
+  notes     String          @default("")
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([status, createdAt])
+  @@map("contact_messages")
+}
+
+// ===========================================================================
+// Page builder & theme
+// ===========================================================================
+
+model PageSection {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  label         String
+  title         String   @default("")
+  subtitle      String   @default("")
+  description   String   @default("")
+  layout        String   @default("default")
+  variant       String   @default("default")
+  cardStyle     String   @default("elevated")
+  background    String   @default("default")
+  accent        String   @default("primary")
+  spacing       String   @default("normal")
+  animation     String   @default("subtle")
+  enabled       Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  draftConfig   Json?
+  publishedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@map("page_sections")
+}
+
+model ThemeConfiguration {
+  id        String   @id @default(cuid())
+  name      String   @default("Default")
+  presetKey String   @default("aurora")
+  isActive  Boolean  @default(false)
+  config    Json
+  draft     Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@map("theme_configurations")
+}
+
+model SiteSettings {
+  id                    String   @id @default(cuid())
+  siteUrl               String   @default("")
+  siteTitle             String   @default("")
+  siteDescription       String   @default("")
+  defaultOgImageId      String?
+  robots                String   @default("index,follow")
+  analyticsEnabled      Boolean  @default(true)
+  resumePrimaryMode     String   @default("UPLOADED")
+  footerNote            String   @default("")
+  privacyNote           String   @default("")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model ResumeVersion {
+  id               String   @id @default(cuid())
+  title            String
+  versionLabel     String   @default("")
+  mediaId          String
+  isActive         Boolean  @default(false)
+  publicDownload   Boolean  @default(true)
+  downloadFilename String   @default("")
+  notes            String   @default("")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  media MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@index([isActive])
+  @@map("resume_versions")
+}
+
+// ===========================================================================
+// Analytics
+// ===========================================================================
+
+model AnalyticsEvent {
+  id          String             @id @default(cuid())
+  type        AnalyticsEventType
+  path        String             @default("")
+  projectId   String?
+  blogPostId  String?
+  referrer    String             @default("")
+  label       String             @default("")
+  visitorHash String?
+  createdAt   DateTime           @default(now())
+
+  @@index([type, createdAt])
+  @@index([projectId])
+  @@map("analytics_events")
+}

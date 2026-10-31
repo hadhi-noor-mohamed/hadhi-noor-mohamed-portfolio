@@ -1,0 +1,634 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Dark mode is class-based so the visitor's choice can override the OS setting.
+--------------------------------------------------------------------------- */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   Design tokens
+   The values below are defaults. Runtime theme publishing overwrites the
+   `--brand-*`, `--light-*` and `--dark-*` variables on :root, and the semantic
+   tokens below resolve against the active mode.
+--------------------------------------------------------------------------- */
+:root {
+  /* Brand (overwritten by Theme Studio) */
+  --brand-primary: #7c3aed;
+  --brand-secondary: #2563eb;
+  --brand-accent: #06b6d4;
+  --brand-pink: #ec4899;
+
+  /* Mode surfaces (overwritten by Theme Studio) */
+  --light-bg: #f8fafc;
+  --light-surface: rgba(255, 255, 255, 0.86);
+  --light-surface-strong: #ffffff;
+  --light-text: #0f172a;
+  --light-muted: #4b5768;
+  --light-border: rgba(15, 23, 42, 0.1);
+
+  --dark-bg: #070b16;
+  --dark-surface: rgba(17, 25, 45, 0.72);
+  --dark-surface-strong: rgba(15, 23, 42, 0.95);
+  --dark-text: #e6e9f2;
+  --dark-muted: #9aa4bd;
+  --dark-border: rgba(148, 163, 184, 0.18);
+
+  /* Typography */
+  --font-heading: 'Sora', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-scale: 1;
+
+  /* Shape & motion */
+  --radius: 1rem;
+  --radius-sm: 0.5rem;
+  --radius-lg: 1.5rem;
+  --shadow-strength: 0.55;
+  --animation-speed: 1;
+  --container-width: 76rem;
+
+  /* Semantic tokens (light default) */
+  --bg: var(--light-bg);
+  --surface: var(--light-surface);
+  --surface-strong: var(--light-surface-strong);
+  --text: var(--light-text);
+  --muted: var(--light-muted);
+  --border: var(--light-border);
+}
+
+.dark {
+  --bg: var(--dark-bg);
+  --surface: var(--dark-surface);
+  --surface-strong: var(--dark-surface-strong);
+  --text: var(--dark-text);
+  --muted: var(--dark-muted);
+  --border: var(--dark-border);
+}
+
+/* Motion preference — also honours the OS reduced-motion setting */
+html[data-animation='none'] {
+  --animation-speed: 0;
+}
+html[data-animation='subtle'] {
+  --animation-speed: 0.7;
+}
+html[data-animation='moderate'] {
+  --animation-speed: 1;
+}
+html[data-animation='expressive'] {
+  --animation-speed: 1.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    --animation-speed: 0;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Tailwind theme bridge
+--------------------------------------------------------------------------- */
+@theme inline {
+  --color-primary: var(--brand-primary);
+  --color-secondary: var(--brand-secondary);
+  --color-accent: var(--brand-accent);
+  --color-pink: var(--brand-pink);
+
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-content: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--border);
+
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  --radius-card: var(--radius);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: calc(1rem * var(--font-scale));
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  code,
+  pre,
+  kbd {
+    font-family: var(--font-mono);
+  }
+
+  /* Visible, high-contrast focus indicator */
+  :focus-visible {
+    outline: 3px solid var(--brand-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--brand-primary) 35%, transparent);
+  }
+
+  /* Scrollbar (progressive enhancement only) */
+  * {
+    scrollbar-color: color-mix(in srgb, var(--brand-primary) 45%, transparent) transparent;
+  }
+
+  img,
+  video,
+  svg {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Reusable component classes
+--------------------------------------------------------------------------- */
+@layer components {
+  .container-page {
+    width: 100%;
+    max-width: var(--container-width);
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  .surface {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .card {
+    position: relative;
+    border-radius: var(--radius);
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    transition:
+      transform calc(220ms * var(--animation-speed)) ease,
+      box-shadow calc(220ms * var(--animation-speed)) ease,
+      border-color calc(220ms * var(--animation-speed)) ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--brand-primary) 45%, var(--border));
+    box-shadow: 0 18px 45px -22px color-mix(in srgb, var(--brand-primary) calc(var(--shadow-strength) * 70%), transparent);
+  }
+
+  .card-flat {
+    box-shadow: none;
+  }
+
+  .card-elevated {
+    box-shadow:
+      0 1px 2px rgba(2, 6, 23, 0.06),
+      0 20px 40px -28px color-mix(in srgb, var(--brand-primary) calc(var(--shadow-strength) * 60%), transparent);
+  }
+
+  .card-bordered {
+    background-color: color-mix(in srgb, var(--surface) 60%, transparent);
+  }
+
+  /* Buttons ---------------------------------------------------------------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: calc(var(--radius) * 0.7);
+    padding: 0.6rem 1.15rem;
+    font-size: 0.925rem;
+    font-weight: 600;
+    line-height: 1.2;
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      transform calc(160ms * var(--animation-speed)) ease,
+      background-color calc(160ms * var(--animation-speed)) ease,
+      border-color calc(160ms * var(--animation-speed)) ease,
+      opacity calc(160ms * var(--animation-speed)) ease;
+  }
+
+  .btn:active {
+    transform: translateY(1px) scale(0.995);
+  }
+
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-primary {
+    background-image: linear-gradient(120deg, var(--brand-primary), var(--brand-secondary));
+    color: #fff;
+    box-shadow: 0 12px 30px -16px color-mix(in srgb, var(--brand-primary) 85%, transparent);
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.08);
+  }
+
+  .btn-accent {
+    background-image: linear-gradient(120deg, var(--brand-secondary), var(--brand-accent));
+    color: #04121f;
+  }
+
+  .btn-outline {
+    border-color: var(--border);
+    background-color: color-mix(in srgb, var(--surface) 60%, transparent);
+    color: var(--text);
+  }
+
+  .btn-outline:hover {
+    border-color: color-mix(in srgb, var(--brand-primary) 55%, var(--border));
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+  }
+
+  .btn-ghost:hover {
+    background-color: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+  }
+
+  .btn-danger {
+    background-color: #dc2626;
+    color: #fff;
+  }
+
+  .btn-sm {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  /* Form controls --------------------------------------------------------- */
+  .input,
+  .textarea,
+  .select {
+    width: 100%;
+    border-radius: calc(var(--radius) * 0.6);
+    border: 1px solid var(--border);
+    background-color: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+    color: var(--text);
+    padding: 0.6rem 0.8rem;
+    font-size: 0.925rem;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .input:focus,
+  .textarea:focus,
+  .select:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 22%, transparent);
+    outline: none;
+  }
+
+  .input[aria-invalid='true'],
+  .textarea[aria-invalid='true'],
+  .select[aria-invalid='true'] {
+    border-color: #dc2626;
+  }
+
+  .label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+    letter-spacing: 0.01em;
+  }
+
+  .hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .error-text {
+    font-size: 0.78rem;
+    color: #f87171;
+  }
+
+  /* Badges & chips -------------------------------------------------------- */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border: 1px solid var(--border);
+    background-color: color-mix(in srgb, var(--surface-strong) 70%, transparent);
+    color: var(--text);
+  }
+
+  .badge-primary {
+    border-color: color-mix(in srgb, var(--brand-primary) 45%, transparent);
+    background-color: color-mix(in srgb, var(--brand-primary) 16%, transparent);
+    color: color-mix(in srgb, var(--brand-primary) 82%, var(--text));
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.75rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    transition: all 160ms ease;
+  }
+
+  .chip[aria-pressed='true'],
+  .chip:hover {
+    color: var(--text);
+    border-color: color-mix(in srgb, var(--brand-primary) 55%, transparent);
+    background-color: color-mix(in srgb, var(--brand-primary) 14%, transparent);
+  }
+
+  /* Utility --------------------------------------------------------------- */
+  .gradient-text {
+    background-image: linear-gradient(110deg, var(--brand-primary), var(--brand-secondary) 45%, var(--brand-accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(120deg, var(--brand-primary), var(--brand-accent), transparent 70%);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .aurora-bg {
+    position: absolute;
+    inset: -20% -10% auto -10%;
+    height: 60vh;
+    background:
+      radial-gradient(45% 55% at 15% 20%, color-mix(in srgb, var(--brand-primary) 38%, transparent), transparent 70%),
+      radial-gradient(40% 50% at 80% 10%, color-mix(in srgb, var(--brand-accent) 30%, transparent), transparent 70%),
+      radial-gradient(35% 45% at 55% 45%, color-mix(in srgb, var(--brand-pink) 22%, transparent), transparent 70%);
+    filter: blur(60px);
+    opacity: 0.75;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .rich-text {
+    line-height: 1.75;
+  }
+
+  .rich-text p + p {
+    margin-top: 0.9rem;
+  }
+
+  .rich-text h2 {
+    font-size: 1.35rem;
+    margin-top: 1.6rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .rich-text h3 {
+    font-size: 1.15rem;
+    margin-top: 1.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .rich-text ul,
+  .rich-text ol {
+    margin: 0.75rem 0 0.75rem 1.25rem;
+    list-style: disc;
+  }
+
+  .rich-text ol {
+    list-style: decimal;
+  }
+
+  .rich-text li {
+    margin-bottom: 0.35rem;
+  }
+
+  .rich-text a {
+    color: color-mix(in srgb, var(--brand-accent) 85%, var(--text));
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .rich-text blockquote {
+    border-left: 3px solid color-mix(in srgb, var(--brand-primary) 55%, transparent);
+    padding-left: 1rem;
+    color: var(--muted);
+    margin: 1rem 0;
+  }
+
+  .rich-text code {
+    background-color: color-mix(in srgb, var(--brand-primary) 14%, transparent);
+    padding: 0.1rem 0.35rem;
+    border-radius: 6px;
+    font-size: 0.86em;
+  }
+
+  .rich-text pre {
+    background-color: var(--surface-strong);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+
+  .rich-text pre code {
+    background: none;
+    padding: 0;
+  }
+
+  .rich-text table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+
+  .rich-text th,
+  .rich-text td {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.65rem;
+    text-align: left;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+    background: var(--brand-primary);
+    color: white;
+    padding: 0.6rem 1rem;
+    border-radius: 0 0 8px 0;
+  }
+
+  .skip-link:focus {
+    left: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Theme-driven component variants (published by the Theme Studio)
+   These override the defaults according to data-* attributes on <html>.
+--------------------------------------------------------------------------- */
+html[data-card-style='flat'] .card {
+  backdrop-filter: none;
+  box-shadow: none;
+}
+html[data-card-style='elevated'] .card {
+  backdrop-filter: none;
+  box-shadow:
+    0 1px 2px rgba(2, 6, 23, 0.06),
+    0 20px 40px -28px color-mix(in srgb, var(--brand-primary) calc(var(--shadow-strength) * 60%), transparent);
+}
+html[data-card-style='bordered'] .card {
+  backdrop-filter: none;
+  background-color: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+html[data-card-style='glass'] .card {
+  backdrop-filter: blur(10px);
+}
+
+html[data-button-style='solid'] .btn-primary {
+  background-image: none;
+  background-color: var(--brand-primary);
+}
+html[data-button-style='outlined'] .btn-primary {
+  background-image: none;
+  background-color: transparent;
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--brand-primary) 55%, var(--border));
+}
+html[data-button-style='soft'] .btn-primary {
+  background-image: none;
+  background-color: color-mix(in srgb, var(--brand-primary) 22%, transparent);
+  color: var(--text);
+}
+
+html[data-density='compact'] {
+  --container-width: 72rem;
+}
+html[data-density='relaxed'] {
+  --container-width: 82rem;
+}
+
+html[data-nav-style='solid'] .site-header {
+  background-color: var(--surface-strong);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html[data-nav-style='bordered'] .site-header {
+  background-color: transparent;
+  border-bottom: 1px solid var(--border);
+}
+html[data-nav-style='floating'] .site-header {
+  margin: 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+/* ---------------------------------------------------------------------------
+   Micro-animations
+--------------------------------------------------------------------------- */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up calc(600ms * var(--animation-speed)) ease both;
+}
+
+/* Scroll reveal — disabled automatically by reduced motion */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}

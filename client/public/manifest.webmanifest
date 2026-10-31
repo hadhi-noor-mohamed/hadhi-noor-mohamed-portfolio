@@ -1,0 +1,17 @@
+{
+  "name": "Hadhi Noor Mohamed H — Portfolio",
+  "short_name": "Hadhi H",
+  "description": "Aspiring Software Developer | Cybersecurity Enthusiast | Data Analytics Explorer",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1120",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

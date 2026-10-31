@@ -1,0 +1,22 @@
+# Build artifacts are recreated by Vercel's build step.
+client/dist/
+server/dist/
+coverage/
+*.tsbuildinfo
+
+# Never upload local secrets.
+.env
+.env.local
+.env.*.local
+
+# Local development database and media.
+.dev/
+storage/
+server/storage/
+server/.test-storage/
+
+# Logs and editor noise.
+*.log
+.DS_Store
+Thumbs.db
+.idea/

@@ -1,0 +1,32 @@
+# Dependencies and build artefacts are produced inside the image.
+node_modules
+**/node_modules
+dist
+**/dist
+build
+**/build
+coverage
+
+# Local environment & secrets
+.env
+.env.*
+!.env.example
+
+# Local tooling / database / uploads
+.dev
+server/storage
+server/uploads
+server/.test-storage
+*.log
+
+# Editors / OS / VCS
+.git
+.gitignore
+.github
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Docs and test output
+*.md
