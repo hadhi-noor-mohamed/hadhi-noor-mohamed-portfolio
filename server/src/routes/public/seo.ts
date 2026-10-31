@@ -5,6 +5,15 @@ import { PUBLISHED_PROJECT_WHERE, PUBLISHED_JOURNEY_WHERE } from '../../services
 
 export const publicSeoRouter = Router();
 
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 publicSeoRouter.get(
   '/sitemap.xml',
   asyncHandler(async (_req, res) => {
@@ -33,27 +42,33 @@ publicSeoRouter.get(
     ]);
 
     const base = process.env.SITE_URL || process.env.APP_ORIGIN || 'http://localhost:5173';
-    const urls = [
-      `${base}/`,
-      `${base}/about`,
-      `${base}/skills`,
-      `${base}/projects`,
-      `${base}/experience`,
-      `${base}/journey`,
-      `${base}/blog`,
-      `${base}/contact`,
-      `${base}/resume`,
-      ...projects.map((p) => `${base}/projects/${p.slug}`),
-      ...posts.map((b) => `${base}/blog/${b.slug}`),
-      ...journey.map((j) => `${base}/journey/${j.slug}`),
+    const staticPaths = [
+      '/',
+      '/about',
+      '/skills',
+      '/projects',
+      '/experience',
+      '/achievements',
+      '/journey',
+      '/blog',
+      '/contact',
+      '/resume',
+    ];
+    const entries: Array<{ loc: string; lastmod?: Date }> = [
+      ...staticPaths.map((p) => ({ loc: `${base}${p}` })),
+      ...projects.map((p) => ({ loc: `${base}/projects/${p.slug}`, lastmod: p.updatedAt })),
+      ...posts.map((b) => ({ loc: `${base}/blog/${b.slug}`, lastmod: b.updatedAt })),
+      ...journey.map((j) => ({ loc: `${base}/journey/${j.slug}`, lastmod: j.updatedAt })),
     ];
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
       `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-      urls
+      entries
         .map(
-          (u) =>
-            `  <url>\n    <loc>${u.replace(/&/g, '&amp;')}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
+          ({ loc, lastmod }) =>
+            `  <url>\n    <loc>${escapeXml(loc)}</loc>\n` +
+            (lastmod ? `    <lastmod>${lastmod.toISOString()}</lastmod>\n` : '') +
+            `    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
         )
         .join('\n') +
       '\n</urlset>';

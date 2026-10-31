@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { env } from './env.js';
 import { prisma } from './db.js';
 import { publicRouter } from './routes/public/index.js';
+import { publicSeoRouter } from './routes/public/seo.js';
 import { adminRouter } from './routes/admin/index.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 import { securityHeaders } from './middleware/security.js';
@@ -128,6 +129,10 @@ export function createApp() {
   app.use('/api', attachSession);
   app.use('/api/public', publicRouter);
   app.use('/api/admin', adminRouter);
+
+  // Search engines request these from the site root. They remain available
+  // under /api/public for clients that probe the API directly.
+  app.use(publicSeoRouter);
 
   app.use('/api', notFoundHandler);
 

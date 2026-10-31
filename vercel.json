@@ -14,6 +14,8 @@
     { "source": "/api/:path*", "destination": "/api?__path=:path*" },
     { "source": "/favicon.ico", "destination": "/favicon.svg" },
     { "source": "/favicon.png", "destination": "/favicon.svg" },
+    { "source": "/sitemap.xml", "destination": "/api?__path=public/sitemap.xml" },
+    { "source": "/robots.txt", "destination": "/api?__path=public/robots.txt" },
     { "source": "/:path((?!api/|uploads/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
