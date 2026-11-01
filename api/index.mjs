@@ -31,7 +31,12 @@ function restoreUrl(req) {
   params.delete('__path');
   const rest = params.toString();
   const clean = subPath.replace(/^\/+/, '').replace(/\/+$/, '');
-  req.url = `/api${clean ? `/${clean}` : ''}${rest ? `?${rest}` : ''}`;
+  // Local media is mounted at `/uploads/...` on the Express app, while the
+  // rest of the API lives under `/api`. Keep the root path for uploads so the
+  // same handler works on Vercel and on a long-running server.
+  const isUpload = clean === 'uploads' || clean.startsWith('uploads/');
+  const prefix = isUpload ? '' : '/api';
+  req.url = `${prefix}${clean ? `/${clean}` : ''}${rest ? `?${rest}` : ''}`;
 }
 
 async function getApp() {

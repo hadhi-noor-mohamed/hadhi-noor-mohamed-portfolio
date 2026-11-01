@@ -12,6 +12,7 @@
   "rewrites": [
     { "source": "/api", "destination": "/api?__path=" },
     { "source": "/api/:path*", "destination": "/api?__path=:path*" },
+    { "source": "/uploads/:path*", "destination": "/api?__path=uploads/:path*" },
     { "source": "/favicon.ico", "destination": "/favicon.svg" },
     { "source": "/favicon.png", "destination": "/favicon.svg" },
     { "source": "/sitemap.xml", "destination": "/api?__path=public/sitemap.xml" },
