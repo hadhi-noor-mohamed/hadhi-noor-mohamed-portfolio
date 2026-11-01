@@ -11,21 +11,7 @@
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <script>
-      // Apply stored theme before paint to avoid a flash of the wrong theme.
-      (function () {
-        try {
-          var stored = localStorage.getItem('hpf-theme-mode');
-          var mode = stored || 'system';
-          var dark =
-            mode === 'dark' ||
-            (mode === 'system' &&
-              window.matchMedia('(prefers-color-scheme: dark)').matches);
-          document.documentElement.classList.toggle('dark', dark);
-          document.documentElement.dataset.themeMode = mode;
-        } catch (e) {}
-      })();
-    </script>
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
